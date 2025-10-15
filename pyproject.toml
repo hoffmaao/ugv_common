@@ -8,14 +8,17 @@ version = "0.1.0"
 description = "Shared rover state, survey/waypoints, GNSS, and navigation utilities"
 readme = "README.md"
 requires-python = ">=3.8"
-authors = [{name = "hoffmaao"}]
+authors = [{ name = "hoffmaao" }]
 dependencies = [
-  "pyserial>=3.5",
-  "pyubx2>=1.2.0",
+    "pyserial>=3.5",
+    "pyubx2>=1.2.0",
 ]
 
 [project.optional-dependencies]
 enkf = ["numpy>=1.24"]
+
+[tool.setuptools]
+package-dir = {"" = "src"}
 
 [tool.setuptools.packages.find]
 where = ["src"]
