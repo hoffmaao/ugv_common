@@ -18,19 +18,41 @@ US_SURVEY_FOOT_TO_M = 1200.0 / 3937.0  # exact factor
 
 @dataclass
 class GeoOrigin:
+    """
+    Represents a geographic origin with latitude, longitude, and optional altitude.
+
+    Attributes:
+        lat_deg (float): Latitude in degrees.
+        lon_deg (float): Longitude in degrees.
+        alt_m (float): Altitude in meters (default is 0.0).
+    """
     lat_deg: float
     lon_deg: float
     alt_m: float = 0.0
 
 def _as_arrays(x: Union[Number, Sequence[Number]]) -> list[float]:
+    """
+    Converts a number or sequence of numbers into a list of floats.
+
+    Args:
+        x (Union[Number, Sequence[Number]]): A single number or a sequence of numbers.
+
+    Returns:
+        list[float]: A list of floats.
+    """
     if isinstance(x, (list, tuple)):
         return list(map(float, x))
     return [float(x)]
 
 def make_local_aeqd_crs(origin: GeoOrigin) -> CRS:
     """
-    Local Azimuthal-Equidistant CRS centered at mission origin.
-    Returns a pyproj.CRS usable with GeoPandas .to_crs().
+    Creates a local Azimuthal-Equidistant CRS centered at the given geographic origin.
+
+    Args:
+        origin (GeoOrigin): The geographic origin for the CRS.
+
+    Returns:
+        CRS: A pyproj.CRS object usable with GeoPandas .to_crs().
     """
     proj4 = (
         f"+proj=aeqd +lat_0={origin.lat_deg} +lon_0={origin.lon_deg} "
@@ -45,9 +67,19 @@ def wgs84_to_enu_gpd(
     origin: Optional[GeoOrigin] = None,
 ) -> Tuple[list[float], list[float], Optional[list[float]]]:
     """
-    Project WGS84 lon/lat to local ENU in meters using GeoPandas (AEQD@origin).
-    If origin is None, the first point is used as the origin.
-    Returns (x_east_m, y_north_m, z_up_m_or_None)
+    Projects WGS84 longitude/latitude to local ENU coordinates in meters using GeoPandas.
+
+    Args:
+        lat (Union[Number, Sequence[Number]]): Latitude(s) in degrees.
+        lon (Union[Number, Sequence[Number]]): Longitude(s) in degrees.
+        alt (Optional[Union[Number, Sequence[Number]]], optional): Altitude(s) in meters. Defaults to None.
+        origin (Optional[GeoOrigin], optional): The geographic origin for the projection. Defaults to None.
+
+    Returns:
+        Tuple[list[float], list[float], Optional[list[float]]]:
+            x_east_m (list[float]): Easting coordinates in meters.
+            y_north_m (list[float]): Northing coordinates in meters.
+            z_up_m_or_None (Optional[list[float]]): Up coordinates in meters or None if altitude is not provided.
     """
     lats = _as_arrays(lat); lons = _as_arrays(lon)
     if len(lats) != len(lons):
@@ -82,8 +114,18 @@ def project_points(
     to_meters: bool = False,
 ) -> Tuple[list[float], list[float]]:
     """
-    Project WGS84 lon/lat to a target EPSG (e.g., 3031, 3413, 2260, 2263).
-    If the target CRS uses US survey feet (e.g., 2260/2263), set to_meters=True to convert outputs to meters.
+    Projects WGS84 longitude/latitude to a target EPSG coordinate reference system.
+
+    Args:
+        lat (Union[Number, Sequence[Number]]): Latitude(s) in degrees.
+        lon (Union[Number, Sequence[Number]]): Longitude(s) in degrees.
+        epsg (int): EPSG code of the target CRS.
+        to_meters (bool, optional): Whether to convert outputs to meters if the target CRS uses US survey feet. Defaults to False.
+
+    Returns:
+        Tuple[list[float], list[float]]:
+            x (list[float]): Projected x-coordinates.
+            y (list[float]): Projected y-coordinates.
     """
     lats = _as_arrays(lat); lons = _as_arrays(lon)
     gdf = gpd.GeoDataFrame(geometry=gpd.points_from_xy(lons, lats), crs="EPSG:4326")
@@ -106,13 +148,14 @@ def project_points(
 
 def select_crs_for_location(lat_deg: float, lon_deg: float) -> int:
     """
-    Heuristic CRS selector:
-    - lat <= -60 → EPSG:3031 (Antarctica)
-    - lat >=  60 → EPSG:3413 (Arctic/Greenland)
-    - NY region quick check:
-        * Long Island NYC bbox → EPSG:2263 (ftUS)
-        * New York East bbox   → EPSG:2260 (ftUS)
-    - otherwise None (use local ENU/AEQD or UTM)
+    Selects an appropriate EPSG code for a given geographic location based on latitude and longitude.
+
+    Args:
+        lat_deg (float): Latitude in degrees.
+        lon_deg (float): Longitude in degrees.
+
+    Returns:
+        int: EPSG code for the selected CRS. Returns 0 if no suitable CRS is found.
     """
     if lat_deg <= -60.0:
         return 3031

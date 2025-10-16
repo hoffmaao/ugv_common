@@ -7,6 +7,19 @@ from .geodesy import GeoOrigin, wgs84_to_enu
 
 @dataclass
 class Waypoint:
+    """
+    Represents a waypoint with local ENU coordinates and navigation parameters.
+
+    Attributes:
+        x (float): Easting coordinate in meters.
+        y (float): Northing coordinate in meters.
+        z (float): Up coordinate in meters (default is 0.0).
+        speed_mps (float): Desired speed at the waypoint in meters per second.
+        hold_sec (float): Time to hold at the waypoint in seconds.
+        yaw_rad (Optional[float]): Desired yaw angle in radians.
+        tolerance_m (float): Tolerance radius in meters to consider the waypoint reached.
+        id (Optional[str]): Identifier for the waypoint.
+    """
     # Local ENU (map) coordinates
     x: float
     y: float
@@ -19,6 +32,16 @@ class Waypoint:
 
 @dataclass
 class Survey:
+    """
+    Represents a survey consisting of waypoints and metadata.
+
+    Attributes:
+        name (str): Name of the survey.
+        started_at (datetime.datetime): Timestamp when the survey was started.
+        origin (GeoOrigin): Geographic origin for the survey.
+        waypoints (List[Waypoint]): List of waypoints in the survey.
+        notes (str): Additional notes about the survey.
+    """
     name: str
     started_at: datetime.datetime
     origin: GeoOrigin
@@ -28,6 +51,17 @@ class Survey:
     # ---------- Factories ----------
     @classmethod
     def from_csv(cls, name: str, filepath: str, origin: GeoOrigin) -> "Survey":
+        """
+        Creates a Survey instance from a CSV file.
+
+        Args:
+            name (str): Name of the survey.
+            filepath (str): Path to the CSV file.
+            origin (GeoOrigin): Geographic origin for the survey.
+
+        Returns:
+            Survey: A Survey instance populated with waypoints from the CSV file.
+        """
         wps: List[Waypoint] = []
         with open(filepath, "r", newline="") as f:
             reader = csv.DictReader(filter(lambda row: row[0] != "#", f))
@@ -45,6 +79,17 @@ class Survey:
 
     @classmethod
     def from_json(cls, name: str, filepath: str, origin: GeoOrigin) -> "Survey":
+        """
+        Creates a Survey instance from a JSON file.
+
+        Args:
+            name (str): Name of the survey.
+            filepath (str): Path to the JSON file.
+            origin (GeoOrigin): Geographic origin for the survey.
+
+        Returns:
+            Survey: A Survey instance populated with waypoints from the JSON file.
+        """
         with open(filepath, "r") as f:
             data = json.load(f)
         wps: List[Waypoint] = []
@@ -66,7 +111,22 @@ class Survey:
 
     # ---------- Introspection ----------
     def next_waypoint(self, index: int) -> Optional[Waypoint]:
+        """
+        Retrieves the next waypoint based on the given index.
+
+        Args:
+            index (int): Index of the waypoint.
+
+        Returns:
+            Optional[Waypoint]: The next waypoint or None if the index is out of range.
+        """
         return self.waypoints[index] if 0 <= index < len(self.waypoints) else None
 
     def count(self) -> int:
+        """
+        Counts the number of waypoints in the survey.
+
+        Returns:
+            int: The number of waypoints.
+        """
         return len(self.waypoints)
